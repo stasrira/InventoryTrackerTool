@@ -12,6 +12,7 @@ Public Const cDictionayWorksheetName = "Dictionary"
 Public Const cFlatbedScansWorksheetName = "FlatbedScans"
 
 Public Const cInvItemsWorksheetName = "Inv_Items"
+Public Const cInvItemsAvailabilityWorksheetName = "Inv_Availability"
 Public Const cConfigWorksheetName = "Configuration"
 
 Public Const cCustomMenuName = "&MSSM MENU"
@@ -998,10 +999,18 @@ Public Sub LoadCustomMenus()
         .Caption = cCustomMenuName 'names the menu item
         
         With .Controls.Add(Type:=msoControlButton)
-            .Caption = "Load Reagents"
-            .OnAction = "LoadReagents"
+            .Caption = "Load Inventory Refill Levels"
+            .OnAction = "'LoadDataSheet" & """" & cInvItemsWorksheetName & """, """ & InventoryRefillLevels & """'"
             .FaceId = 3000
         End With
+        
+        With .Controls.Add(Type:=msoControlButton)
+            .Caption = "Load Inventory Availability"
+            .OnAction = "'LoadDataSheet" & """" & cInvItemsAvailabilityWorksheetName & """, """ & InventoryAvailability & """'"
+            .FaceId = 3000
+        End With
+        
+
         
 '        With .Controls.Add(Type:=msoControlButton) 'adds a dropdown button to the menu item
 '            .Caption = "Validate ""RawData"" Sheet    CTRL+SHIFT+S" 'adds a description to the menu item
@@ -1235,7 +1244,12 @@ Public Sub ApplyConditFormat_NotZero(r As Range)
     End With
 End Sub
 
-Public Sub LoadCaptionsForRecordset(firstCellOfHeaderRow As Range, rsData As ADODB.Recordset, Optional makeBold As Boolean = True)
+Public Sub LoadCaptionsForRecordset( _
+        firstCellOfHeaderRow As Range, _
+        rsData As ADODB.Recordset, _
+        Optional makeBold As Boolean = True, _
+        Optional applyFilter As Boolean = True)
+        
     Dim i As Integer
     Dim r As Range
     
@@ -1255,5 +1269,9 @@ Public Sub LoadCaptionsForRecordset(firstCellOfHeaderRow As Range, rsData As ADO
         
         'make headers bold
         r.Font.Bold = makeBold
+        
+        'set filters for the columns On
+        If applyFilter Then r.AutoFilter
+        
     End With
 End Sub

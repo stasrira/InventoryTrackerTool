@@ -154,7 +154,10 @@ empty_recordset:
     
 End Sub
 
-Public Sub LoadInventoryItems(Optional WorksheetName As String = cInvItemsWorksheetName, Optional ReportID As ReportID = 0)
+'LoadDataSheet , InventoryRefillLevels
+'LoadDataSheet cInvItemsAvailabilityWorksheetName, InventoryAvailability
+'loads datasheet for the given report id into the give worksheet
+Public Sub LoadDataSheet(Optional WorksheetName As String = cInvItemsWorksheetName, Optional ReportID As ReportID = 0)
     
     Dim clRs As New clsSQLRecordset
     Dim rs As ADODB.Recordset
@@ -164,8 +167,9 @@ Public Sub LoadInventoryItems(Optional WorksheetName As String = cInvItemsWorksh
     Dim procedureName As String
     Dim cfFields() As String, cfRules() As String
     Dim i As Integer
+    Dim msgTitle As String
     
-     Const msgTitle = "Loading Inventory Items to Inventory Tracking Tool"
+    msgTitle = "Database pull to Inventory Tracking Tool"
     
     'setting_profile = SelectFieldSettingProfile() 'GetConfigValue("FieldSetting_LastLoadedProfile")
     
@@ -187,13 +191,13 @@ Public Sub LoadInventoryItems(Optional WorksheetName As String = cInvItemsWorksh
     clRs.errProcessNameTitle = msgTitle
     Set rs = clRs.GetRecordset(procedureName)
     
-    With Worksheets(cInvItemsWorksheetName)
+    With Worksheets(WorksheetName)
         
         If Not rs Is Nothing Then 'if returned recordset is an object
             
             If Not rs.EOF Then 'if returned recordset is not empty load received data
                 'get the address of the fist cell of the range used on the page
-                Set c = .Range(GetConfigValue("InvItems_Range_First_Cell"))
+                Set c = .Range(GetConfigValue("InvSheet_Range_First_Cell"))
                 
                 'clean the area of insertion first; it will select all fields actually used on the page; cleaning won't be applied to the first row containing column headers
                 '.Range(c.Offset(0, 0).Address, c.Offset(.UsedRange.Rows.Count - c.Row, .UsedRange.Columns.Count - c.Column).Address).ClearContents
@@ -212,7 +216,7 @@ Public Sub LoadInventoryItems(Optional WorksheetName As String = cInvItemsWorksh
                 ' Delete all conditional formatting rules in sheet
                 .Cells.FormatConditions.Delete
                 
-                Set hdrs = .Range("A1" & ":" & .Cells(1, .UsedRange.Columns.Count).Address)
+                Set hdrs = .Range(GetConfigValue("InvSheet_Range_First_Cell") & ":" & .Cells(1, .UsedRange.Columns.Count).Address)
                 
                 'get all header titles in a string builder and into a dictionary object. String will be used for a search for a particular column name; dictionary will hold the cell's address with a key being value of the cell
                 For Each c In hdrs.Cells
@@ -245,7 +249,7 @@ Public Sub LoadInventoryItems(Optional WorksheetName As String = cInvItemsWorksh
             End If
         Else
 empty_recordset:
-            MsgBox "Inventory items availability request did not return any data. The process was aborted." & vbCrLf & "Please contact your IT admin to resolve the issue.", vbCritical, msgTitle
+            MsgBox "Database pull request did not return any data. The process was aborted." & vbCrLf & "Please contact your IT admin to resolve the issue.", vbCritical, msgTitle
         End If
     End With
     
