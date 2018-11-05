@@ -1,11 +1,6 @@
 Attribute VB_Name = "mdlDBRelated"
 Option Explicit
 
-Enum FormUseCases
-    FieldSettingProfile = 0
-End Enum
-
-Public popUpFormResponseIndex As Integer
 Public dictProfiles As New Dictionary
 
 Public Function SelectFieldSettingProfile() As Integer
@@ -22,18 +17,6 @@ Public Function SelectFieldSettingProfile() As Integer
     
     SelectFieldSettingProfile = popUpFormResponseIndex 'this value can be overwritten in the form frmSelection, if a selection was made there
     
-End Function
-
-Public Function PrepareForm(use_case As FormUseCases) As Boolean
-    Select Case use_case
-        Case FieldSettingProfile
-            frmSelection.Caption = "Master Template Profiles"
-'            frmSelection.Height = 193
-'            frmSelection.Width = 511
-'
-            PrepareForm = PopulateFieldSettingProfilesList(frmSelection.cmbProfileList)
-            
-    End Select
 End Function
 
 Public Function PopulateFieldSettingProfilesList(ByRef cmb As ComboBox) As Boolean
@@ -156,8 +139,14 @@ End Sub
 
 'LoadDataSheet , InventoryRefillLevels
 'LoadDataSheet cInvItemsAvailabilityWorksheetName, InventoryAvailability
+'LoadDataSheet cInvItemCapacityWorksheetName, InventoryItemsCapacityCheck, 96
+'LoadDataSheet cInvWorkflowCapacityWorksheetName, InventoryWorkflowCapacityCheck, 660
 'loads datasheet for the given report id into the give worksheet
-Public Sub LoadDataSheet(Optional WorksheetName As String = cInvItemsWorksheetName, Optional ReportID As ReportID = 0)
+Public Sub LoadDataSheet( _
+        Optional WorksheetName As String = cInvItemsWorksheetName _
+        , Optional ReportID As ReportID = 0 _
+        , Optional numSamples As Integer = 96 _
+        )
     
     Dim clRs As New clsSQLRecordset
     Dim rs As ADODB.Recordset
@@ -181,6 +170,14 @@ Public Sub LoadDataSheet(Optional WorksheetName As String = cInvItemsWorksheetNa
             procedureName = GetConfigValue("GetInventoryItemsRefilLevels_SQL")
             cfFields = Split(GetConfigValue("InvItems_RefillLevel_FormatCondit_Columns"), ",")
             cfRules = Split(GetConfigValue("InvItems_RefillLevel_FormatCondit_Rules"), ",")
+        Case InventoryItemsCapacityCheck
+            procedureName = Replace(GetConfigValue("GetInventoryItemCapacity_SQL"), cSampleQty_PlaceHolder, CStr(numSamples))
+            cfFields = Split(GetConfigValue("InvItems_Capacity_FormatCondit_Columns"), ",")
+            cfRules = Split(GetConfigValue("InvItems_Capacity_FormatCondit_Rules"), ",")
+        Case InventoryWorkflowCapacityCheck
+            procedureName = Replace(GetConfigValue("GetInventoryWorkflowCapacity_SQL"), cSampleQty_PlaceHolder, CStr(numSamples))
+            cfFields = Split(GetConfigValue("InvItems_Capacity_FormatCondit_Columns"), ",")
+            cfRules = Split(GetConfigValue("InvItems_Capacity_FormatCondit_Rules"), ",")
         Case Else
             procedureName = GetConfigValue("GetInventoryItemsAvailability_SQL")
             cfFields = Split(GetConfigValue("InvItems_Availability_FormatCondit_Columns"), ",")
@@ -231,15 +228,31 @@ Public Sub LoadDataSheet(Optional WorksheetName As String = cInvItemsWorksheetNa
                 strHdrs = sb_hdrs.toString
                 
                 'search predefined column headers (from Config sheet) in the string containing all headers. If found, apply conditional formatting
-                For i = 0 To UBound(cfFields)
-                    If InStr(strHdrs, cfFields(i)) > 0 Then
-                        If i <= UBound(cfRules) Then
-                            'identify the range (a single colulmn) where to conditional formating will be applied
-                            Set c = .Range(.Range(Split(dtHdrs(cfFields(i)), "|")(0)).Offset(1, 0).Address & ":" & .Cells(.UsedRange.Rows.Count, CInt(Split(dtHdrs(cfFields(i)), "|")(1))).Address) 'range presenting single column where to Conditional Formating has to be applied
-                            ApplyConditFormatRule cfRules(i), c 'apply conditional formatting
+                If (Not Not cfFields) > 0 Then 'check if the array was identified
+                    For i = 0 To UBound(cfFields)
+                        If InStr(strHdrs, cfFields(i)) > 0 Then
+                            If (Not Not cfRules) > 0 Then 'check if the array was identified
+                                If i <= UBound(cfRules) Then
+                                    'identify the range (a single colulmn) where to conditional formating will be applied
+                                    Set c = .Range(.Range(Split(dtHdrs(cfFields(i)), "|")(0)).Offset(1, 0).Address & ":" & .Cells(.UsedRange.Rows.Count, CInt(Split(dtHdrs(cfFields(i)), "|")(1))).Address) 'range presenting single column where to Conditional Formating has to be applied
+                                    ApplyConditFormatRule cfRules(i), c 'apply conditional formatting
+                                End If
+                            End If
                         End If
-                    End If
-                Next
+                    Next
+                End If
+                
+'                'check if a special column is present and add a comment to all filled cells in this column
+'                Set hdrs = .Range(.Range(Split(dtHdrs(cSpecialColumn_SampleQtyEstimated), "|")(0)).Offset(1, 0).Address & ":" & .Cells(.UsedRange.Rows.Count, CInt(Split(dtHdrs(cSpecialColumn_SampleQtyEstimated), "|")(1))).Address)
+'
+'                hdrs.ClearComments
+'
+'                For Each c In hdrs
+'                    With c.AddComment
+'                        .Text "Double click to change number of samples being estimated"
+'                        .Visible = False
+'                    End With
+'                Next
                 
                 'apply auto-fit to all columns on the sheet
                 .Cells.EntireColumn.AutoFit

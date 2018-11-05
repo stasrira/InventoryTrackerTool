@@ -2,7 +2,7 @@ Attribute VB_Name = "mdlGeneric"
 Option Explicit
 
 Public Const cHelpTitle = "Inventory Tracking Tool"
-Public Const cHelpVersion = "1.001"
+Public Const cHelpVersion = "ITT - 1.001"
 Public Const cHelpDescription = "Questions and technical support: email to stasrirak.ms@gmail.com"
 
 Public Const cRawDataWorksheetName = "RawData"
@@ -13,6 +13,9 @@ Public Const cFlatbedScansWorksheetName = "FlatbedScans"
 
 Public Const cInvItemsWorksheetName = "Inv_Items"
 Public Const cInvItemsAvailabilityWorksheetName = "Inv_Availability"
+Public Const cInvItemCapacityWorksheetName = "Item_Capacity"
+Public Const cInvWorkflowCapacityWorksheetName = "Workflow_Capacity"
+
 Public Const cConfigWorksheetName = "Configuration"
 
 Public Const cCustomMenuName = "&MSSM MENU"
@@ -22,10 +25,14 @@ Public Const cCustomMenu_SetDropdowonFunc_ShortCut = "    CTRL+SHIFT+D"
 Public Const cCustomMenu_SetValidationFunc = "Set Automatic Validation "
 Public Const cCustomMenu_SetValidationFunc_ShortCut = "          CTRL+SHIFT+V"
 
+Public Const cSpecialColumn_SampleQtyEstimated = "Sample Qty Estimated"
+
 Public Const cFieldSettings_FirstFieldCell = "A2"
 Public Const cRawData_FirstColumnCell = "A1"
 Public Const cValidated_FirstColumnCell = "A1"
 Public Const cConfig_FirstFieldCell = "A2"
+
+Public Const cSampleQty_PlaceHolder = "{sampleQty}"
 
 Public dictValidationResults As New Dictionary
 Public dictFieldSettings As New Dictionary
@@ -35,9 +42,14 @@ Public bVoidDropDownFunctionality As Boolean
 Public bFieldHeadersWereSynced As Boolean
 Public bSetCtrlVPasteAsValues As Boolean
 
+Public popUpFormResponseIndex As Integer
+Public popUpFormResponse_SampleNum As String
+
 Public Enum ReportID
     InventoryAvailability = 0
     InventoryRefillLevels = 1
+    InventoryItemsCapacityCheck = 2
+    InventoryWorkflowCapacityCheck = 3
 End Enum
 
 Public Enum ValidationErrorStatus
@@ -80,6 +92,10 @@ Private Type ValidationReportMsg
     ValidationMessage As String
     MsgBoxStyle As VbMsgBoxStyle
 End Type
+
+Private Enum FormUseCases
+    GetNumberOfSamples = 0
+End Enum
 
 Private CalcState As Long
 Private EventState As Boolean
@@ -1010,6 +1026,17 @@ Public Sub LoadCustomMenus()
             .FaceId = 3000
         End With
         
+        With .Controls.Add(Type:=msoControlButton)
+            .Caption = "Item Capacity Check"
+            .OnAction = "'LoadDataSheet" & """" & cInvItemCapacityWorksheetName & """, """ & InventoryItemsCapacityCheck & """'"
+            .FaceId = 501
+        End With
+        
+        With .Controls.Add(Type:=msoControlButton)
+            .Caption = "Workflow Capacity Check"
+            .OnAction = "'LoadDataSheet" & """" & cInvWorkflowCapacityWorksheetName & """, """ & InventoryWorkflowCapacityCheck & """'"
+            .FaceId = 501
+        End With
 
         
 '        With .Controls.Add(Type:=msoControlButton) 'adds a dropdown button to the menu item
@@ -1202,6 +1229,8 @@ Public Sub ApplyConditFormatRule(rule As String, r As Range)
             ApplyConditFormat_Refill_OK2 r
         Case "NotZero"
             ApplyConditFormat_NotZero r
+        Case "CapacityCheck"
+            ApplyConditFormat_CapacityCheck r
     End Select
 
 End Sub
@@ -1244,6 +1273,27 @@ Public Sub ApplyConditFormat_NotZero(r As Range)
     End With
 End Sub
 
+Public Sub ApplyConditFormat_CapacityCheck(r As Range)
+    With r.FormatConditions.Add(xlCellValue, xlEqual, "0") 'fcd
+        .Font.Color = FontColors.DarkRed '-16776961
+        .Interior.Color = BackgroundColors.LightRed
+        .StopIfTrue = False
+    End With
+    
+    With r.FormatConditions.Add(xlCellValue, xlBetween, "1", "2") 'fcd
+        .Font.Color = FontColors.DarkYellow '-16776961
+        .Interior.Color = BackgroundColors.Yellow
+        .StopIfTrue = False
+        .Font.Bold = True
+    End With
+    
+    With r.FormatConditions.Add(xlCellValue, xlGreater, "2") 'fcd
+        .Font.Color = FontColors.DarkGreen
+        .Interior.Color = BackgroundColors.Green
+        .StopIfTrue = False
+    End With
+End Sub
+
 Public Sub LoadCaptionsForRecordset( _
         firstCellOfHeaderRow As Range, _
         rsData As ADODB.Recordset, _
@@ -1275,3 +1325,39 @@ Public Sub LoadCaptionsForRecordset( _
         
     End With
 End Sub
+
+Public Sub GetNumberOfSamples_ReloadReport(WorksheetName As String, ReportID As ReportID, numSamples As Integer, Optional curSampleNum As String = "")
+
+    numSamples = GetInput_NumberOfSamlpes(curSampleNum)
+    If numSamples > 0 Then 'if a positive number was returned, reload report and pass the received number of samples
+        LoadDataSheet WorksheetName, ReportID, numSamples
+    End If
+    ''cInvItemCapacityWorksheetName , InventoryItemsCapacityCheck, numSamples
+End Sub
+
+
+Public Function GetInput_NumberOfSamlpes(Optional curSampleNum As String = "") As Integer
+    
+    If IsNumeric(curSampleNum) Then
+        popUpFormResponse_SampleNum = Trim(curSampleNum)
+    Else
+        popUpFormResponse_SampleNum = "-1" 'set the default value
+    End If
+    
+    frmNumSamples.Show
+    
+    'GetInput_NumberOfSamlpes = popUpFormResponse_SampleNum 'this value can be overwritten in the form frmSelection, if a selection was made there
+    
+'    If PrepareForm(FieldSettingProfile) Then
+'
+'        frmSelection.Show
+'
+'        'Debug.Print frmSelection.cmbProfileList.Value
+'
+'    End If
+    
+    GetInput_NumberOfSamlpes = CInt(popUpFormResponse_SampleNum) 'this value can be overwritten in the form frmNumSamples, if a data entry was made there
+    
+End Function
+
+
