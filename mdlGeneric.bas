@@ -36,6 +36,7 @@ Public Const cSampleQty_PlaceHolder = "{sampleQty}"
 
 Public dictValidationResults As New Dictionary
 Public dictFieldSettings As New Dictionary
+Public dictReports As New Dictionary
 
 Public bVoidAutomatedValidation As Boolean
 Public bVoidDropDownFunctionality As Boolean
@@ -46,10 +47,10 @@ Public popUpFormResponseIndex As Integer
 Public popUpFormResponse_SampleNum As String
 
 Public Enum ReportID
-    InventoryAvailability = 0
     InventoryRefillLevels = 1
-    InventoryItemsCapacityCheck = 2
-    InventoryWorkflowCapacityCheck = 3
+    InventoryAvailability = 2
+    InventoryItemsCapacityCheck = 3
+    InventoryWorkflowCapacityCheck = 4
 End Enum
 
 Public Enum ValidationErrorStatus
@@ -1015,26 +1016,30 @@ Public Sub LoadCustomMenus()
         .Caption = cCustomMenuName 'names the menu item
         
         With .Controls.Add(Type:=msoControlButton)
-            .Caption = "Load Inventory Refill Levels"
-            .OnAction = "'LoadDataSheet" & """" & cInvItemsWorksheetName & """, """ & InventoryRefillLevels & """'"
+            .Caption = "Load Inventory Items (with Refill Levels) #1"
+            '.OnAction = "'LoadDataSheet" & """" & cInvItemsWorksheetName & """, """ & InventoryRefillLevels & """'"
+            .OnAction = "'LoadDataSheet " & ", """ & 1 & """'" 'InventoryRefillLevels
             .FaceId = 3000
         End With
         
         With .Controls.Add(Type:=msoControlButton)
-            .Caption = "Load Inventory Availability"
-            .OnAction = "'LoadDataSheet" & """" & cInvItemsAvailabilityWorksheetName & """, """ & InventoryAvailability & """'"
+            .Caption = "Load Inventory Availability #2"
+            '.OnAction = "'LoadDataSheet" & """" & cInvItemsAvailabilityWorksheetName & """, """ & 2 & """'" 'InventoryAvailability
+            .OnAction = "'LoadDataSheet " & ", """ & 2 & """'" 'InventoryAvailability
             .FaceId = 3000
         End With
         
         With .Controls.Add(Type:=msoControlButton)
             .Caption = "Item Capacity Check"
-            .OnAction = "'LoadDataSheet" & """" & cInvItemCapacityWorksheetName & """, """ & InventoryItemsCapacityCheck & """'"
+            '.OnAction = "'LoadDataSheet" & """" & cInvItemCapacityWorksheetName & """, """ & InventoryItemsCapacityCheck & """'"
+            .OnAction = "'LoadDataSheet " & ", """ & 3 & """'" 'InventoryItemsCapacityCheck
             .FaceId = 501
         End With
         
         With .Controls.Add(Type:=msoControlButton)
             .Caption = "Workflow Capacity Check"
-            .OnAction = "'LoadDataSheet" & """" & cInvWorkflowCapacityWorksheetName & """, """ & InventoryWorkflowCapacityCheck & """'"
+            '.OnAction = "'LoadDataSheet" & """" & cInvWorkflowCapacityWorksheetName & """, """ & InventoryWorkflowCapacityCheck & """'"
+            .OnAction = "'LoadDataSheet " & ", """ & 4 & """'" 'InventoryWorkflowCapacityCheck
             .FaceId = 501
         End With
 
@@ -1326,8 +1331,9 @@ Public Sub LoadCaptionsForRecordset( _
     End With
 End Sub
 
-Public Sub GetNumberOfSamples_ReloadReport(WorksheetName As String, ReportID As ReportID, numSamples As Integer, Optional curSampleNum As String = "")
-
+Public Sub GetNumberOfSamples_ReloadReport(WorksheetName As String, ReportID As ReportID, Optional curSampleNum As String = "")
+    Dim numSamples As Integer
+    
     numSamples = GetInput_NumberOfSamlpes(curSampleNum)
     If numSamples > 0 Then 'if a positive number was returned, reload report and pass the received number of samples
         LoadDataSheet WorksheetName, ReportID, numSamples
