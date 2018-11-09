@@ -61,8 +61,8 @@ Private Sub Workbook_SheetBeforeDoubleClick(ByVal Sh As Object, ByVal Target As 
     colHeader = Target.Offset(-Target.Row + 1, 0).Value2
     
     For Each rep In dictReports 'todo - think how to avoid looping through all dictionary items on each double click
-        If rep.Name = Sh.Name Then
-            Set r = dictReports(rep.ID)
+        If dictReports(rep).Name = Sh.Name Then
+            Set r = dictReports(rep)
         End If
     Next
     
@@ -76,7 +76,7 @@ Private Sub Workbook_SheetBeforeDoubleClick(ByVal Sh As Object, ByVal Target As 
             
             Select Case r.GetActionProcedureName(colHeader)
                 Case "GetNumberOfSamples_ReloadReport"
-                    GetNumberOfSamples_ReloadReport Sh.Name, dictReports(Sh.Name).ID, Target.Value2
+                    GetNumberOfSamples_ReloadReport Sh.Name, r.ID, Target.Value2
             End Select
             
             Cancel = True 'cancel the dbl-click event from proceeding further
