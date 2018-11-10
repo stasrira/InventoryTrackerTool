@@ -102,7 +102,7 @@ Private CalcState As Long
 Private EventState As Boolean
 Private PageBreakState As Boolean
 
-Sub OptimizeCode_Begin()
+Public Sub OptimizeCode_Begin()
 
     Application.ScreenUpdating = False
     
@@ -117,7 +117,7 @@ Sub OptimizeCode_Begin()
 
 End Sub
 
-Sub OptimizeCode_End()
+Public Sub OptimizeCode_End()
 
     ActiveSheet.DisplayPageBreaks = PageBreakState
     Application.Calculation = CalcState
