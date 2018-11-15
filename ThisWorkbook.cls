@@ -50,7 +50,7 @@ Private Sub Workbook_BeforeClose(Cancel As Boolean)
         
 End Sub
 
-Private Sub Workbook_SheetBeforeDoubleClick(ByVal Sh As Object, ByVal Target As Range, Cancel As Boolean)
+Private Sub Workbook_SheetBeforeDoubleClick(ByVal Sh As Object, ByVal target As Range, Cancel As Boolean)
     Dim colHeader As String
     Dim r As clsReport
     Dim rep As Variant
@@ -58,7 +58,7 @@ Private Sub Workbook_SheetBeforeDoubleClick(ByVal Sh As Object, ByVal Target As 
     'check if Report's dictionary was loaded from DB
     GetInventoryReportsInfo
     
-    colHeader = Target.Offset(-Target.Row + 1, 0).Value2
+    colHeader = target.Offset(-target.Row + 1, 0).Value2
     
     For Each rep In dictReports 'todo - think how to avoid looping through all dictionary items on each double click
         If dictReports(rep).Name = Sh.Name Then
@@ -76,10 +76,42 @@ Private Sub Workbook_SheetBeforeDoubleClick(ByVal Sh As Object, ByVal Target As 
             
             Select Case r.GetActionProcedureName(colHeader)
                 Case "GetNumberOfSamples_ReloadReport"
-                    GetNumberOfSamples_ReloadReport Sh.Name, r.ID, Target.Value2
+                    GetNumberOfSamples_ReloadReport Sh.Name, r.ID, target.Value2
             End Select
             
             Cancel = True 'cancel the dbl-click event from proceeding further
         End If
     End If
+End Sub
+
+Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal target As Range)
+    Dim OldValue As Variant
+'    Application.EnableEvents = False
+'    Application.Undo
+'    oldValue = target.value
+'    Application.Undo
+'    Application.EnableEvents = True
+    
+    Dim c As Range
+    Exit Sub
+    
+    For Each c In target.Cells
+        OldValue = GetOriginalCellValue(c)
+        
+        Debug.Print Sh.Name
+        Debug.Print c.Address & " | Old Value = " & OldValue & " | New Value = " & c.value
+    Next
+    
+    'oldValue = GetOriginalCellValue(target)
+
+    
+End Sub
+
+Private Sub Workbook_SheetDeactivate(ByVal Sh As Object)
+    Debug.Print Sh.Name
+
+End Sub
+
+Private Sub Workbook_SheetActivate(ByVal Sh As Object)
+
 End Sub
